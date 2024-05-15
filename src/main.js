@@ -25,6 +25,7 @@ formEl.addEventListener('submit', e => {
 
   ulEl.innerHTML = '';
   loaderEl.classList.remove('is-hidden');
+  loadMoreEl.classList.add('is-hidden');
   
 
   fetchPhotosByQuery(querySearch, perPage, 1)
