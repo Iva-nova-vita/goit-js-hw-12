@@ -13,7 +13,7 @@ const perPage = 15;
 let page = 1;
 let totalPages = null;
 let querySearch = '';
-let lightbox;
+let lightbox = new SimpleLightbox('.cards a', { captionsData: 'alt' });
 
 formEl.addEventListener('submit', e => {
   e.preventDefault();
@@ -24,11 +24,26 @@ formEl.addEventListener('submit', e => {
   }
 
   ulEl.innerHTML = '';
+  page = 1;
+  formEl.reset();
+  showPhotosByQuery();
+});
+
+loadMoreEl.addEventListener('click', () => {
+  showPhotosByQuery();
+
+  const cardEl = document.querySelector('.card');
+  const heightOfCardEl = cardEl.getBoundingClientRect().height;
+  window.scrollBy({
+    top: 2 * heightOfCardEl,
+    behavior: 'smooth',
+  });
+});
+
+function showPhotosByQuery() {
   loaderEl.classList.remove('is-hidden');
   loadMoreEl.classList.add('is-hidden');
-  
-
-  fetchPhotosByQuery(querySearch, perPage, 1)
+  fetchPhotosByQuery(querySearch, perPage, page)
     .then(data => {
       totalPages = Math.ceil(data.totalHits / perPage);
       if (!data.hits.length) {
@@ -38,8 +53,9 @@ formEl.addEventListener('submit', e => {
         return;
       }
       const markup = renderGallery(data.hits);
-      ulEl.insertAdjacentHTML('afterbegin', markup);
-      lightbox = new SimpleLightbox('.cards a', { captionsData: 'alt' });
+      ulEl.insertAdjacentHTML('beforeend', markup);
+      lightbox.refresh();
+
       if (page >= totalPages) {
         showNotification(
           "We're sorry, but you've reached the end of search results."
@@ -50,44 +66,7 @@ formEl.addEventListener('submit', e => {
       page++;
     })
     .catch(error => console.log(error))
-    .finally(() => loaderEl.classList.add('is-hidden'));
-  formEl.reset();
-});
-
-
-loadMoreEl.addEventListener('click', e=>{
-  loaderEl.classList.remove('is-hidden');
-  loadMoreEl.classList.add('is-hidden');
-  fetchPhotosByQuery(querySearch, perPage, page)
-  .then(data => {
-    if (!data.hits.length) {
-      showNotification(
-        'Sorry, there are no images matching your search query. <br>Please try again!'
-      );
-      return;
-    }
-    const markup = renderGallery(data.hits);
-    ulEl.insertAdjacentHTML('beforeend', markup);
-    lightbox.refresh();
-    const cardEl = document.querySelector('.card');
-    const heightOfCardEl = cardEl.getBoundingClientRect().height;
-    window.scrollBy({
-      top: 2*heightOfCardEl,
-      behavior: "smooth",
+    .finally(() => {
+      loaderEl.classList.add('is-hidden');
     });
-
-    if (page >= totalPages) {
-      showNotification(
-        "We're sorry, but you've reached the end of search results."
-      );
-      return;
-    }
-    page++;
-    loadMoreEl.classList.remove('is-hidden');
-  })
-  .catch(error => console.log(error))
-  .finally(() => {
-    loaderEl.classList.add('is-hidden');
-    
-  });
-})
+}
